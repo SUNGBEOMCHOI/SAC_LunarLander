@@ -4,7 +4,8 @@ train:
   lr: 0.001
   train_timesteps: 100000
   val_timesteps: 1000
-  target_update_timesteps: 100
+  target_update_timesteps: 1000
+  target_update_ratio: 0.005
   discount_factor: 0.99
   replay_buffer_size: 5000
   train_starts_timesteps : 1000

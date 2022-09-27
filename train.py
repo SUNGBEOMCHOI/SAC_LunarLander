@@ -1,5 +1,6 @@
 import os
 from collections import namedtuple
+import warnings
 
 import yaml
 import numpy as np
@@ -10,6 +11,7 @@ from env import make_env
 from model import SAC
 from utils import ReplayBuffer, loss_func, optim_func, scheduler_func, plot_progress, update_params
 
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 def train(cfg):
     ########################
     #    make SAC model    #
@@ -28,6 +30,7 @@ def train(cfg):
     train_timesteps = cfg['train']['train_timesteps']
     val_timesteps = cfg['train']['val_timesteps']
     target_update_timesteps = cfg['train']['target_update_timesteps']
+    target_update_ratio = cfg['train']['target_update_ratio']
     discount_factor = cfg['train']['discount_factor']
     replay_buffer_size = cfg['train']['replay_buffer_size']
     train_starts_timesteps = cfg['train']['train_starts_timesteps']
@@ -76,8 +79,11 @@ def train(cfg):
                 for scheduler in scheduler_list:
                     scheduler.step()
 
-            if step % target_update_timesteps == 0:
-                model.target_value_net.load_state_dict(model.value_net.state_dict())
+            # if step % target_update_timesteps == 0:
+                # model.target_value_net.load_state_dict(model.value_net.state_dict())
+            new_target_value_parameters = (1-target_update_ratio)*model.target_value_net.state_dict() +\
+                target_update_ratio*model.value_net.state_dict()
+            model.target_value_net.load_state_dict(new_target_value_parameters)
 
             if step % val_timesteps == 0:
                 plot_progress(history)

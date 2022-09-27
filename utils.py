@@ -158,6 +158,7 @@ def plot_progress(history, save=True):
         plt.savefig(f'./train_progress/step_{len(loss_array)}.png')
     else:
         plt.show()
+    plt.close()
 
 def update_params(replay_buffer, model, criterion_list, optim_list, discount_factor, batch_size):
     """
