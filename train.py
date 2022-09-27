@@ -32,7 +32,13 @@ def train(cfg):
     replay_buffer_size = cfg['train']['replay_buffer_size']
     train_starts_timesteps = cfg['train']['train_starts_timesteps']
     video_path = cfg['train']['video_path']
+    model_path = cfg['train']['model_path']
+    progress_path = cfg['train']['progress_path']
     env_name = cfg['env']['env_name']
+
+    os.makedirs(video_path, exist_ok=True)
+    os.makedirs(model_path, exist_ok=True)
+    os.makedirs(progress_path, exist_ok=True)
 
     env = make_env(env_name)
     val_env = make_env(env_name)

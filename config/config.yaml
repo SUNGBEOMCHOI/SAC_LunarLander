@@ -9,6 +9,8 @@ train:
   replay_buffer_size: 5000
   train_starts_timesteps : 1000
   video_path: ./video
+  model_path: ./pretrained
+  progress_path: ./train_progress
 env:
   env_name: LunarLander-v2
   state_dim: 8
