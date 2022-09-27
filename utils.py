@@ -183,7 +183,7 @@ def update_params(replay_buffer, model, criterion_list, optim_list, discount_fac
 
     # update value network
     value_optim.zero_grad()
-    value_prediction = model.value_net(state_tensor) # [B, 1]
+    value_prediction = model.value_net(state_tensor.detach()) # [B, 1]
     target_action_prob = model.policy_net(state_tensor) # [B, 4]
     m = Categorical(target_action_prob)
     target_action = m.sample().unsqueeze(dim=1)
@@ -195,7 +195,7 @@ def update_params(replay_buffer, model, criterion_list, optim_list, discount_fac
 
     # update q network
     q_optim.zero_grad()
-    q_output = model.q_net(state_tensor) # [B, 4]
+    q_output = model.q_net(state_tensor.detach()) # [B, 4]
     selected_action = action_tensor.unsqueeze(dim=1).detach() # [B, 1]
     q_prediction = torch.gather(q_output, dim=-1, index=selected_action)# [B, 1]
     target_q = torch.zeros_like(reward_tensor) # [B, 1]
@@ -209,7 +209,7 @@ def update_params(replay_buffer, model, criterion_list, optim_list, discount_fac
 
     # update policy network
     policy_optim.zero_grad()
-    policy_prediction = model.policy_net(state_tensor) # [B, 4]
+    policy_prediction = model.policy_net(state_tensor.detach()) # [B, 4]
     target_policy = F.softmax(model.q_net(state_tensor), dim=-1) # [B, 4]
     policy_loss = policy_criterion(policy_prediction, target_policy.detach())
     policy_loss.backward()
