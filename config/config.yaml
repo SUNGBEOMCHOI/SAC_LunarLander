@@ -17,4 +17,4 @@ env:
   state_dim: 8
   action_dim: 4
 model:
-  hidden_dim: 256
+  hidden_dim: 4

@@ -1,4 +1,5 @@
 import os
+import copy
 from collections import namedtuple
 import warnings
 
@@ -76,14 +77,12 @@ def train(cfg):
             if len(replay_buffer.memory) > train_starts_timesteps:
                 loss = update_params(replay_buffer, model, criterion_list, optim_list, discount_factor, batch_size)
                 history['loss'].append(loss)
+                for params in zip(model.target_value_net.state_dict().values(), model.value_net.state_dict().values()):
+                    target_value_param, value_param = params
+                    new_target_value_param = (1-target_update_ratio)*target_value_param + target_update_ratio*value_param
+                    target_value_param.copy_(new_target_value_param)
                 for scheduler in scheduler_list:
                     scheduler.step()
-
-            # if step % target_update_timesteps == 0:
-                # model.target_value_net.load_state_dict(model.value_net.state_dict())
-            new_target_value_parameters = (1-target_update_ratio)*model.target_value_net.state_dict() +\
-                target_update_ratio*model.value_net.state_dict()
-            model.target_value_net.load_state_dict(new_target_value_parameters)
 
             if step % val_timesteps == 0:
                 plot_progress(history)
@@ -116,13 +115,13 @@ def validation(model, val_env, step, video_path):
             next_state, reward, done, info = val_env.step(action)
             score += reward
             state = next_state
-            val_env.render()
             if (idx+1) == test_num:
                 video_recorder.capture_frame()
         average_score += score
     video_recorder.close()
     average_score /= test_num
     print(f'----- train steps: {step:07d} ----- average score: {average_score:6,.2f} -----')
+
 
     torch.save({
         'policy_net_state_dict': model.policy_net.state_dict(),
