@@ -1,6 +1,7 @@
 import os
 import warnings
 
+import yaml
 import torch
 from gym.wrappers.monitoring.video_recorder import VideoRecorder
 
@@ -20,14 +21,14 @@ def test(cfg):
     state_dim = cfg['env']['state_dim']
     action_dim = cfg['env']['action_dim']
     hidden_dim = cfg['model']['hidden_dim']
-    device = torch.device("cuda" if device=='cuda' and torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if (device=='cuda' and torch.cuda.is_available()) else "cpu")
     model = SAC(state_dim, action_dim, device, hidden_dim)
 
     ########################
     #    load SAC model    #
     ########################
     model_path = cfg['test']['model_path']
-    checkpoint = torch.load(model_path)
+    checkpoint = torch.load(model_path, map_location=device)
     model.policy_net.load_state_dict(checkpoint['policy_net_state_dict'])
     model.value_net.load_state_dict(checkpoint['value_net_state_dict'])
     model.target_value_net.load_state_dict(checkpoint['value_net_state_dict'])
@@ -49,7 +50,7 @@ def test(cfg):
     average_score = 0.0
     seed = [i for i in range(test_times)]
     for idx in range(test_times):
-        video_file_path = os.path.join(video_path, f'test_{idx}.mp4')
+        video_file_path = os.path.join(video_path, f'test_{idx+1}.mp4')
         video_recorder = VideoRecorder(env, video_file_path)
         state = env.reset(seed=seed[idx])
         done, score = False, 0.0
@@ -64,3 +65,8 @@ def test(cfg):
         video_recorder.close()
     average_score /= test_times
     print(f'----- average score: {average_score:6,.2f} -----')
+
+if __name__ == '__main__':
+    with open('./config/config.yaml') as f:
+        cfg = yaml.safe_load(f)
+    test(cfg)
