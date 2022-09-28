@@ -68,7 +68,7 @@ def train(cfg):
             action = model.get_action(state).item()
             next_state, reward, done, info = env.step(action)
             total_reward += reward
-            reward = max(min(reward, 10.0), -10.0)
+            reward = max(min(reward, 100.0), -100.0)
             replay_buffer.append(Sample(state, 
                                         np.array([action]),
                                         np.array([reward]),
