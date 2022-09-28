@@ -20,6 +20,7 @@ def train(cfg):
     state_dim = cfg['env']['state_dim']
     action_dim = cfg['env']['action_dim']
     hidden_dim = cfg['model']['hidden_dim']
+    device = torch.device("cuda" if device=='cuda' and torch.cuda.is_available() else "cpu")
     model = SAC(state_dim, action_dim, device, hidden_dim)
 
     ########################
@@ -67,6 +68,7 @@ def train(cfg):
             action = model.get_action(state).item()
             next_state, reward, done, info = env.step(action)
             total_reward += reward
+            reward = max(min(reward, 10.0), -10.0)*10
             replay_buffer.append(Sample(state, 
                                         np.array([action]),
                                         np.array([reward]),
@@ -92,7 +94,7 @@ def train(cfg):
                 validation(model, val_env, step, video_path)
 
         new_steps = step - len(history['score'])
-        history['score'].extend([total_reward]*new_steps)
+        history['score'].append(total_reward)
 
 def validation(model, val_env, step, video_path):
     """
@@ -114,7 +116,7 @@ def validation(model, val_env, step, video_path):
         done, score = False, 0.0
         while not done:
             with torch.no_grad():
-                action = model.get_action(state).item()
+                action = model.get_action(state, validation=True).item()
             next_state, reward, done, info = val_env.step(action)
             score += reward
             state = next_state

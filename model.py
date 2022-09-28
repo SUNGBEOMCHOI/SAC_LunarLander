@@ -77,7 +77,8 @@ class PolicyNet(nn.Module):
         Returns:
             Torch tensor of actions of size [batch_size, action_space]
         """
-        return self.model(x)
+        action_probs = self.model(x)
+        return action_probs + (action_probs <= 0.0).float() * 1e-8
 
 class SAC(nn.Module):
     def __init__(self, state_dim, action_dim, device, hidden_dim=128):
@@ -92,7 +93,7 @@ class SAC(nn.Module):
     def forward(self, x):
         raise NotImplementedError
 
-    def get_action(self, x):
+    def get_action(self, x, validation=False):
         """
         Return action corresponding to input state
 
@@ -104,7 +105,9 @@ class SAC(nn.Module):
         if isinstance(x, np.ndarray):
             x = torch.from_numpy(x)
         x = x.to(self.device)
-        with torch.no_grad():
-            m = Categorical(self.policy_net(x).detach())
-        action = m.sample()
+        if validation:
+            action = torch.argmax(self.policy_net(x))
+        else:
+            m = Categorical(self.policy_net(x))
+            action = m.sample()
         return action

@@ -13,8 +13,8 @@ train:
   model_path: ./pretrained
   progress_path: ./train_progress
 env:
-  env_name: LunarLander-v2
-  state_dim: 8
-  action_dim: 4
+  env_name: CartPole-v1
+  state_dim: 4
+  action_dim: 2
 model:
-  hidden_dim: 256
+  hidden_dim: 128

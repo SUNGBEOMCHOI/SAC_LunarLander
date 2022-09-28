@@ -143,7 +143,7 @@ def plot_progress(history, save=True):
 
     plt.figure(figsize=(10, 5))
     plt.subplot(1, 2, 1)
-    moving_average_score = running_mean(score_array, N=200)
+    moving_average_score = running_mean(score_array, N=10)
     plt.plot(np.arange(len(moving_average_score)), moving_average_score)
     plt.xlabel('Time steps')
     plt.ylabel('Score')
@@ -210,7 +210,7 @@ def update_params(replay_buffer, model, criterion_list, optim_list, discount_fac
 
     # update policy network
     policy_optim.zero_grad()
-    policy_prediction = model.policy_net(state_tensor.detach()) # [B, 4]
+    policy_prediction = torch.log(model.policy_net(state_tensor.detach())) # [B, 4]
     target_policy = F.softmax(model.q_net(state_tensor), dim=-1) # [B, 4]
     policy_loss = policy_criterion(policy_prediction, target_policy.detach())
     policy_loss.backward()
