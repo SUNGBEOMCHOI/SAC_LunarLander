@@ -13,6 +13,7 @@ conda activate "environment name"
 pip install numpy==1.23
 pip install pytorch==1.12.1
 pip install gym==0.22
+pip install gym[box2d]
 ```
 
 ### Git clone repo
