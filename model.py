@@ -104,6 +104,7 @@ class SAC(nn.Module):
         if isinstance(x, np.ndarray):
             x = torch.from_numpy(x)
         x = x.to(self.device)
-        m = Categorical(self.policy_net(x))
+        with torch.no_grad():
+            m = Categorical(self.policy_net(x).detach())
         action = m.sample()
         return action

@@ -1,5 +1,4 @@
 import os
-import copy
 from collections import namedtuple
 import warnings
 
@@ -12,7 +11,7 @@ from env import make_env
 from model import SAC
 from utils import ReplayBuffer, loss_func, optim_func, scheduler_func, plot_progress, update_params
 
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning) # for not appearing warning messages
 def train(cfg):
     ########################
     #    make SAC model    #
@@ -77,12 +76,16 @@ def train(cfg):
             if len(replay_buffer.memory) > train_starts_timesteps:
                 loss = update_params(replay_buffer, model, criterion_list, optim_list, discount_factor, batch_size)
                 history['loss'].append(loss)
+                # soft target update
                 for params in zip(model.target_value_net.state_dict().values(), model.value_net.state_dict().values()):
                     target_value_param, value_param = params
                     new_target_value_param = (1-target_update_ratio)*target_value_param + target_update_ratio*value_param
                     target_value_param.copy_(new_target_value_param)
                 for scheduler in scheduler_list:
                     scheduler.step()
+
+            # if step % target_update_timesteps == 0: # hard target update
+            #     model.target_value_net.load_state_dict(model.value_net.state_dict())
 
             if step % val_timesteps == 0:
                 plot_progress(history)
