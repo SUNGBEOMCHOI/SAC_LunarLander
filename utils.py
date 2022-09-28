@@ -145,7 +145,7 @@ def plot_progress(history, save=True):
     plt.subplot(1, 2, 1)
     moving_average_score = running_mean(score_array, N=10)
     plt.plot(np.arange(len(moving_average_score)), moving_average_score)
-    plt.xlabel('Time steps')
+    plt.xlabel('Episodes')
     plt.ylabel('Score')
     plt.title('Train Progress[Score]')
 

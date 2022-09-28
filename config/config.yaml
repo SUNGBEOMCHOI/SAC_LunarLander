@@ -1,11 +1,11 @@
-device: cpu
+device: cuda
 train:
   batch_size: 256
   lr: 0.001
   train_timesteps: 100000
   val_timesteps: 1000
   target_update_timesteps: 1000
-  target_update_ratio: 0.005
+  target_update_ratio: 0.01
   discount_factor: 0.99
   replay_buffer_size: 5000
   train_starts_timesteps : 1000
@@ -13,8 +13,8 @@ train:
   model_path: ./pretrained
   progress_path: ./train_progress
 env:
-  env_name: CartPole-v1
-  state_dim: 4
-  action_dim: 2
+  env_name: LunarLander-v2
+  state_dim: 8
+  action_dim: 4
 model:
   hidden_dim: 128
