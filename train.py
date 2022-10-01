@@ -7,7 +7,7 @@ import numpy as np
 import torch
 from gym.wrappers.monitoring.video_recorder import VideoRecorder
 
-from env import make_env
+from env import make_env, env_wrapper
 from model import SAC
 from utils import ReplayBuffer, loss_func, optim_func, scheduler_func, plot_progress, update_params
 
@@ -44,8 +44,13 @@ def train(cfg):
     os.makedirs(model_path, exist_ok=True)
     os.makedirs(progress_path, exist_ok=True)
 
+    
     env = make_env(env_name)
     val_env = make_env(env_name)
+
+    if env_name == 'BreakoutNoFrameskip-v4':
+        env = env_wrapper(env)
+        val_env = env_wrapper(val_env)
 
     Sample = namedtuple("Data", 'state, action, reward, next_state, done')
     replay_buffer = ReplayBuffer(buf_size=replay_buffer_size, device=device)
