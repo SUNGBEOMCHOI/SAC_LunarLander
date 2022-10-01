@@ -1,6 +1,6 @@
 device: cuda
 train:
-  batch_size: 256
+  batch_size: 64
   lr: 0.0005
   train_timesteps: 100000
   val_timesteps: 1000

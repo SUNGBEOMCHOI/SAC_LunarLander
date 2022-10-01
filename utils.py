@@ -58,10 +58,10 @@ class ReplayBuffer:
                 reward_tensor = reward
                 next_state_tensor = next_state
                 done_tensor = done
-        state_tensor = torch.from_numpy(state_tensor).to(self.device)
+        state_tensor = torch.from_numpy(state_tensor).type(torch.float32).to(self.device)
         action_tensor = torch.from_numpy(action_tensor).type(torch.int64).to(self.device)
         reward_tensor = torch.from_numpy(reward_tensor).type(torch.float32).to(self.device)
-        next_state_tensor = torch.from_numpy(next_state_tensor).to(self.device)
+        next_state_tensor = torch.from_numpy(next_state_tensor).type(torch.float32).to(self.device)
         done_tensor = torch.from_numpy(done_tensor).to(self.device)
         return state_tensor, action_tensor, reward_tensor, next_state_tensor, done_tensor
 
@@ -83,7 +83,6 @@ def loss_func():
     """
     value_criterion = nn.MSELoss()
     q_criterion = nn.MSELoss()
-    # policy_criterion = nn.MSELoss()
     policy_criterion = nn.KLDivLoss(reduction='batchmean')
     loss_list = [value_criterion, q_criterion, policy_criterion]
     return loss_list
@@ -95,7 +94,8 @@ def optim_func(model, learning_rate):
     Returns:
         optim_list: List contains value_optim, q_optim, policy_optim
     """
-    value_optim = optim.Adam(model.value_net.parameters(), lr=learning_rate)
+    value_optim = optim.Adam(list(model.encoder.parameters())+list(model.value_net.parameters()),\
+                            lr=learning_rate)
     q_optim = optim.Adam(model.q_net.parameters(), lr=learning_rate)
     policy_optim = optim.Adam(model.policy_net.parameters(), lr=learning_rate)
     optim_list = [value_optim, q_optim, policy_optim]
@@ -178,20 +178,22 @@ def update_params(replay_buffer, model, criterion_list, optim_list, discount_fac
     """
     state_tensor, action_tensor, reward_tensor, next_state_tensor, done_tensor =\
         replay_buffer.get_random_sample(batch_size)
-    
     value_criterion, q_criterion, policy_criterion = criterion_list
     value_optim, q_optim, policy_optim = optim_list
 
+    # Calculate encoded state
+    state_tensor = model.encoder(state_tensor.detach())
+
     # update value network
     value_optim.zero_grad()
-    value_prediction = model.value_net(state_tensor.detach()) # [B, 1]
+    value_prediction = model.value_net(state_tensor) # [B, 1]
     target_action_prob = model.policy_net(state_tensor) # [B, 4]
     m = Categorical(target_action_prob)
     target_action = m.sample().unsqueeze(dim=1)
     value_target = torch.gather(model.q_net(state_tensor), dim=-1, index=target_action) -\
         torch.log(torch.gather(model.policy_net(state_tensor), dim=-1, index=target_action)) # [B, 1]
     value_loss = value_criterion(value_prediction, value_target.detach())
-    value_loss.backward()
+    value_loss.backward(retain_graph=True)
     value_optim.step()
 
     # update q network
@@ -202,10 +204,11 @@ def update_params(replay_buffer, model, criterion_list, optim_list, discount_fac
     target_q = torch.zeros_like(reward_tensor) # [B, 1]
     target_q[done_tensor] = reward_tensor[done_tensor] # case done
     # case not done
+    next_state_tensor = model.target_encoder(next_state_tensor)
     target_q[~done_tensor] = reward_tensor[~done_tensor] +\
         discount_factor*model.target_value_net(next_state_tensor[~done_tensor])
     q_loss = q_criterion(q_prediction, target_q.detach())
-    q_loss.backward()
+    q_loss.backward(retain_graph=True)
     q_optim.step()
 
     # update policy network
@@ -213,7 +216,7 @@ def update_params(replay_buffer, model, criterion_list, optim_list, discount_fac
     policy_prediction = torch.log(model.policy_net(state_tensor.detach())) # [B, 4]
     target_policy = F.softmax(model.q_net(state_tensor), dim=-1) # [B, 4]
     policy_loss = policy_criterion(policy_prediction, target_policy.detach())
-    policy_loss.backward()
+    policy_loss.backward(retain_graph=True)
     policy_optim.step()
 
     total_loss = (value_loss + q_loss + policy_loss).item()

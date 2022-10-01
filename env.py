@@ -4,7 +4,7 @@ import gym
 import torch
 import torchvision.transforms as trans
 
-def make_env(env_name='BreakoutNoFrameskip-v4'):
+def make_env(env_name='BreakoutNoFrameskip-v4', render_mode=None):
     """
     Make gym environment
 
@@ -15,7 +15,10 @@ def make_env(env_name='BreakoutNoFrameskip-v4'):
     Returns:
         env: gym environment
     """
-    env = gym.make(env_name)
+    if render_mode is None:
+        env = gym.make(env_name)
+    else:
+        env = gym.make(env_name, render_mode=render_mode)
     return env
 
 class env_wrapper(gym.Env):
@@ -45,9 +48,8 @@ class env_wrapper(gym.Env):
         else:
             state = self.env.reset()
         unified_state = self.preprocess_state(state.transpose(2, 0, 1))
-        done = False
         for _ in range(3):
-            state, reward, done, info = self.env.step(0) # no-op for 3 frames
+            state, _, _, _ = self.env.step(1) # action is create ball
             preprocess_state = self.preprocess_state(state.transpose(2, 0, 1))
             unified_state = np.concatenate((unified_state, preprocess_state), axis=0)
         return unified_state
@@ -68,7 +70,7 @@ class env_wrapper(gym.Env):
         total_reward, done = 0.0, False
         for idx in range(4):
             if done:
-                state = np.zeros((1, 84, 84))
+                preprocess_state = np.zeros((1, 84, 84))
             else:
                 state, reward, done, info = self.env.step(action)
                 preprocess_state = self.preprocess_state(state.transpose(2, 0, 1))
@@ -78,7 +80,6 @@ class env_wrapper(gym.Env):
                 unified_state = preprocess_state
             else:
                 unified_state = np.concatenate((unified_state, preprocess_state), axis=0)
-
         return unified_state, total_reward, done, info
 
     def preprocess_state(self, state):

@@ -1,9 +1,11 @@
 import os
 from collections import namedtuple
 import warnings
+import time
 
 import yaml
 import numpy as np
+import matplotlib.pyplot as plt
 import torch
 from gym.wrappers.monitoring.video_recorder import VideoRecorder
 
@@ -46,7 +48,7 @@ def train(cfg):
 
     
     env = make_env(env_name)
-    val_env = make_env(env_name)
+    val_env = make_env(env_name, render_mode='human')
 
     if env_name == 'BreakoutNoFrameskip-v4':
         env = env_wrapper(env)
@@ -88,6 +90,10 @@ def train(cfg):
                     target_value_param, value_param = params
                     new_target_value_param = (1-target_update_ratio)*target_value_param + target_update_ratio*value_param
                     target_value_param.copy_(new_target_value_param)
+                for params in zip(model.target_encoder.state_dict().values(), model.encoder.state_dict().values()):
+                    target_encoder_param, encoder_param = params
+                    new_target_encoder_param = (1-target_update_ratio)*target_encoder_param + target_update_ratio*encoder_param
+                    target_encoder_param.copy_(new_target_encoder_param)
                 for scheduler in scheduler_list:
                     scheduler.step()
 
@@ -115,13 +121,16 @@ def validation(model, val_env, step, video_path):
     test_num, average_score = 1, 0.0
     seed = [i for i in range(test_num)]
     video_file_path = os.path.join(video_path, f'step_{step}.mp4')
-    video_recorder = VideoRecorder(val_env, video_file_path)
+    video_recorder = VideoRecorder(val_env.env, video_file_path)
+    lives, info = 5, {"lives": 5}
     for idx in range(test_num):
         state = val_env.reset(seed=seed[idx])
         done, score = False, 0.0
         while not done:
             with torch.no_grad():
                 action = model.get_action(state, validation=True).item()
+            if lives != info['lives']:
+                action = 1 # If lives reduce, then create a ball
             next_state, reward, done, info = val_env.step(action)
             score += reward
             state = next_state
