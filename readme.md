@@ -65,7 +65,7 @@ The following is the case of returning a high reward.
 
 ### Config file
 
-You can change ./config/config.yaml file if you want. Current file optimizes to solve LunarLander-v2 task. If you want to change task, you can change env_name, state_dim and action_dim. For example, env_name:CartPole-v1, state_dim:4, action_dim:2
+In this project Lunar lander is solved by a Soft Actor-Critic(SAC) method of reinforcement learning. You can change ./config/config.yaml file if you want. Current file optimizes to solve LunarLander-v2 task. If you want to change task, you can change env_name, state_dim and action_dim. For example, env_name:CartPole-v1, state_dim:4, action_dim:2
 
 ```
 device: cuda
